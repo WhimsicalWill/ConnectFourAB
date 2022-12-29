@@ -61,7 +61,7 @@ def minimax_move(game, max_depth=2, eval=eval2):
     return best_score, move
 
 def run_game(p0_depth, p1_depth, sleep_time=1, debug=False, human=False):
-    # p0_first = random.choice([True, False])
+    p0_first = random.choice([True, False])
     game = ConnectFourGame(6, 7, p0_first)
     while game.status() == None:
         current_turn = game.get_turn()
