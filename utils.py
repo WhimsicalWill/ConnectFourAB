@@ -3,6 +3,15 @@ import gym
 import copy
 from gym import spaces
 
+def update_target(tau, model, target_model):
+    """
+    Copies weights from model into target_model
+    Uses an exponentially moving average (EMA) with parameter tau
+    """
+    for target_param, param in zip(target_model.parameters(), model.parameters()):
+        updated_param = tau * param.data + (1 - tau) * target_param.data
+        target_param.data.copy_(updated_param)
+
 class InvalidMove(Exception):
     def __init__(self, message):
         self.message = message
@@ -178,3 +187,4 @@ class ConnectFourGym(gym.Env):
         reward = 0 if reward == None else reward
         info = {}
         return obs, reward, done, info
+

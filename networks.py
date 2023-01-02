@@ -4,6 +4,7 @@ import torch.functional as F
 import torch.optim as optim
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+print(f"Using device: {device}")
 
 class ValueNetwork(nn.Module):
     """
