@@ -1,11 +1,13 @@
+import numpy as np
 import time
-import random
+import torch
 from utils import GameState, ConnectFourGame
 from evaluations import eval1, eval2
+from networks import device
 
-def minimax_move(game, max_depth=2, eval=eval2):
+def minimax_move(true_state, max_depth=2, eval=eval2):
     """
-    Return the minimax move (currently assumes it's player 0's turn)
+    Return the minimax move (currently assumes it's player 1's turn)
 
     Args:
         b - (list) the 2D board state
@@ -26,12 +28,13 @@ def minimax_move(game, max_depth=2, eval=eval2):
         if status is not None:
             return status, None
         if d == max_depth:
-            return eval(state.b), None
+            obs = torch.tensor(state.b).float().to(device)
+            return eval(obs).item(), None
 
         moves = state.get_valid_moves()
-        next_turn = (state.turn + 1) % 2
+        next_turn = state.get_next_turn()
         best_move = None
-        if state.turn == 0: # Max's turn
+        if state.turn == 1: # Max's turn
             best_score = float("-inf")
             for move in moves:
                 updated_board = state.get_updated_board(move)
@@ -57,20 +60,19 @@ def minimax_move(game, max_depth=2, eval=eval2):
                     break
         return best_score, best_move
 
-    best_score, move = dfs(game.state, 0, float("-inf"), float("inf"))
+    best_score, move = dfs(true_state, 0, float("-inf"), float("inf"))
     return best_score, move
 
-def run_game(p0_depth, p1_depth, sleep_time=1, debug=False, human=False):
-    p0_first = random.choice([True, False])
-    game = ConnectFourGame(6, 7, p0_first)
+def run_game(p1_depth, p2_depth, sleep_time=1, debug=False, human=False):
+    game = ConnectFourGame(6, 7)
     while game.status() == None:
         current_turn = game.get_turn()
-        if current_turn == 0:
-            best_score, move = minimax_move(game, max_depth=p0_depth)
+        if current_turn == 1:
+            best_score, move = minimax_move(game.state, max_depth=p1_depth)
         elif human: # When human = True, human controls player 1
             best_score, move = None, int(input("Enter a column (1-7) to drop your piece\n")) - 1
         else:
-            best_score, move = minimax_move(game, max_depth=p1_depth)
+            best_score, move = minimax_move(game.state, max_depth=p2_depth)
         game.make_move(move)
         if debug:
             print(f"\nPlayer {current_turn} moved")
@@ -82,26 +84,26 @@ def run_game(p0_depth, p1_depth, sleep_time=1, debug=False, human=False):
     print(f"Game ended. Final result: {game.status()}")
     return game.status()
     
-def run_experiment(p0_depth, p1_depth, num_episodes=100):
-    p0_wins, p1_wins, ties = 0, 0, 0
+def run_experiment(p1_depth, p2_depth, num_episodes=100):
+    p1_wins, p2_wins, ties = 0, 0, 0
     for ep in range(num_episodes):
-        result = run_game(p0_depth, p1_depth)
+        result = run_game(p1_depth, p2_depth)
         if result == -1:
-            p1_wins += 1
+            p2_wins += 1
         elif result == 1:
-            p0_wins += 1
+            p1_wins += 1
         else:
             ties += 1
-    p0_wins = p0_wins * 100 / num_episodes
     p1_wins = p1_wins * 100 / num_episodes
+    p2_wins = p2_wins * 100 / num_episodes
     ties = ties * 100 / num_episodes
     print(f"Results (in %) for {num_episodes} episodes:")
-    print(f"p0_wins: {p0_wins}%, p1_wins: {p1_wins}%, ties: {ties}%")
+    print(f"p1_wins: {p1_wins}%, p2_wins: {p2_wins}%, ties: {ties}%")
 
 
 if __name__ == "__main__":
-    # run_game(7, 7, sleep_time=0, debug=True)
-    run_game(8, 8, sleep_time=0, debug=True, human=True)
+    run_game(7, 7, sleep_time=0, debug=True)
+    # run_game(8, 8, sleep_time=0, debug=True, human=True)
     # run_experiment(6, 3)
 
 # TODO: make some sort of dummy evaluation function (done)
