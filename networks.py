@@ -33,12 +33,10 @@ class ValueNetwork(nn.Module):
         batch_shape = obs.shape[:-3]
         img_shape = obs.shape[-3:]
 
-        # ensure the input is batched
+        # convert shape to (B, C, H, W)
         embed = self.convolutions(obs.reshape(-1, *img_shape))
-
-        # verify that this works for singleton batch
         embed = torch.reshape(embed, (*batch_shape, -1))
-        value = torch.tanh(self.fc_1(embed))
+        value = self.fc_1(embed)
         return value
 
     def save_checkpoint(self, path):

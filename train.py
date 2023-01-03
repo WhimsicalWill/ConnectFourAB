@@ -17,7 +17,7 @@ def train(env, buffer, v_net, target_v_net, config, debug=False):
     state, done = env.reset(), False
     for step in range(1, config.train_steps):
         # check if we need to do stuff on this step
-        if step % config.save_every:
+        if step % config.save_every == 0:
             v_net.save_checkpoint(config.save_path)
 
         _, action = minimax_move(state, config.search_depth, target_v_net)
@@ -94,4 +94,4 @@ if __name__ == "__main__":
     )
     print(f"Initialized modules, beginning training")
     with wandb.init(project='Connect Four with learned value function', config=config.__dict__):
-        train(env, buffer, v_net, target_v_net, config, debug=True)
+        train(env, buffer, v_net, target_v_net, config, debug=False)
