@@ -65,7 +65,7 @@ def threeOutOfFour(board):
     # Check backward diagonal chunks
     deltas = [(0, 0), (1, -1), (2, -2), (3, -3)]
     for row in range(3):
-        for col in range(4):
+        for col in range(3, 7):
             window = []
             for dy, dx in deltas:
                 window.append(board[row + dy][col + dx])

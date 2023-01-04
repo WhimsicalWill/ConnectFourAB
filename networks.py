@@ -16,16 +16,16 @@ class ValueNetwork(nn.Module):
     def __init__(self, input_shape):
         super(ValueNetwork, self).__init__()
         self.shape = input_shape
-        self.activation = nn.ELU()
+        self.activation = nn.ReLU()
         d = 12
-        k1, k2  = 4, 3
+        k1, k2  = 4, 2
         self.convolutions = nn.Sequential(
             nn.Conv2d(1, d, k1),
             self.activation,
             nn.Conv2d(d, 2*d, k2),
             self.activation,
         )
-        self.fc_1 = nn.Linear(4*d, 1)
+        self.fc_1 = nn.Linear(12*d, 1)
         self.optimizer = optim.Adam(self.parameters())
         self.to(device)
 
@@ -36,7 +36,7 @@ class ValueNetwork(nn.Module):
         # convert shape to (B, C, H, W)
         embed = self.convolutions(obs.reshape(-1, *img_shape))
         embed = torch.reshape(embed, (*batch_shape, -1))
-        value = torch.tanh(self.fc_1(embed))
+        value = self.fc_1(embed)
         return value
 
     def save_checkpoint(self, path):
