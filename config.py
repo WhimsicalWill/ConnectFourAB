@@ -2,7 +2,7 @@ class ConnectFourConfig:
     def __init__(
         self,
         train_steps,
-        save_every,
+        log_interval,
         load_weights,
         target_update,
         search_depth,
@@ -11,7 +11,7 @@ class ConnectFourConfig:
         save_path
     ):
         self.train_steps = train_steps
-        self.save_every = save_every
+        self.log_interval = log_interval
         self.load_weights = load_weights
         self.target_update = target_update
         self.search_depth = search_depth

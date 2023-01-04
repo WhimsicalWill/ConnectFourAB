@@ -6,12 +6,11 @@ class ReplayBuffer:
 
 	def clear(self):
 		self.states = []
-		self.actions = []
-		self.rewards = []
-		self.is_terminals = []
+		self.turns = []
+		self.final_reward = None
 
-	def store_transition(self, state, action, reward, is_terminal):
+	def store_transition(self, state, reward, turn):
 		self.states.append(state)
-		self.actions.append(action)
-		self.rewards.append(reward)
-		self.is_terminals.append(is_terminal)
+		self.turns.append(turn)
+		if reward != None:
+			self.final_reward = reward

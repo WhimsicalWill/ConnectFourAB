@@ -5,12 +5,11 @@ from utils import GameState, ConnectFourGame
 from evaluations import eval1, eval2
 from networks import device
 
-def minimax_move(true_state, max_depth=2, eval=eval2):
+def minimax_move(true_state, max_depth=2, eval=None):
     """
     Return the minimax move (currently assumes it's player 1's turn)
 
     Args:
-        b - (list) the 2D board state
         max_depth - (int) the search depth
         eval - (function) the evaluation function to use at max-depth, non-terminal nodes
 
@@ -19,17 +18,19 @@ def minimax_move(true_state, max_depth=2, eval=eval2):
         move - (int) the column that is optimal under the minimax search
     """
     def dfs(state, d, alpha, beta):
-        """
-        Args:
-            state - (GameState) game state
-            d - (int) current depth
-        """
         status = state.get_game_over_status()
         if status is not None:
             return status, None
         if d == max_depth:
-            obs = torch.tensor(state.b).float().to(device)
-            return eval(obs).item(), None
+            if eval == None: # fixed evaluation function
+                return eval2(state.b), None
+            else: # learned evaluation function
+                if state.turn == 1: # Max's turn
+                    obs = torch.tensor([state.b], dtype=torch.float32).to(device)
+                    return eval(obs).item(), None
+                else: # Min's turn
+                    obs = -torch.tensor([state.b], dtype=torch.float32).to(device)
+                    return -eval(obs).item(), None
 
         moves = state.get_valid_moves()
         next_turn = state.get_next_turn()

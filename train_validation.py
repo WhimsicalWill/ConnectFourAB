@@ -47,13 +47,13 @@ def train(env, buffer, v_net, config, debug=False, num_epochs=200):
 
     train_dataset = TensorDataset(train_states, train_scores)
     test_dataset = TensorDataset(test_states, test_scores)
-    train_dataloader = DataLoader(train_dataset, batch_size=256, shuffle=True)
-    test_dataloader = DataLoader(test_dataset, batch_size=256, shuffle=True)
+    train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+    test_dataloader = DataLoader(test_dataset, batch_size=32, shuffle=True)
     training_step = 0
     for epoch in range(num_epochs):
         for states, scores in train_dataloader:
             training_step += 1
-            if training_step % 10 == 0:
+            if training_step % 100 == 0:
                 valid_loss = benchmark_net(test_dataloader, v_net)
                 wandb.log({"validation_loss": valid_loss}, training_step)
                 print(f"Validation loss (step {training_step}): {valid_loss}")
@@ -63,6 +63,7 @@ def train(env, buffer, v_net, config, debug=False, num_epochs=200):
             value_loss.backward()
             v_net.optimizer.step()
             wandb.log({"value_loss": value_loss}, training_step)
+        v_net.save_checkpoint(config.save_path)
 
 def benchmark_net(test_dataloader, v_net):
     """

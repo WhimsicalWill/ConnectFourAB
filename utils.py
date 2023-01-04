@@ -25,7 +25,7 @@ class GameState:
         Args:
             rows, cols - (int) the dimensions of the board
             b - (list) the board state
-            turn - (int) 0 or 1, indicating the player to move
+            turn - (int) 1 or 2, indicating the player to move
             next - (GameState) a pointer to the next state in the game
         """
         self.rows, self.cols = len(board), len(board[0])
@@ -103,6 +103,13 @@ class GameState:
             return 2
         else:
             return 1
+
+    def get_flipped_board(self):
+        board_copy = copy.deepcopy(self.b)
+        for r in range(len(board_copy)):
+            for c in range(len(board_copy[0])):
+                board_copy[r][c] *= -1
+        return board_copy
 
     def print_board(self):
         for row in self.b:
@@ -184,7 +191,6 @@ class ConnectFourGym(gym.Env):
         obs = self.game.state
         reward = self.game.status()
         done = reward != None
-        reward = 0 if reward == None else reward
         info = {}
         return obs, reward, done, info
 
