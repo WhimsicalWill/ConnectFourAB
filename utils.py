@@ -182,8 +182,12 @@ class ConnectFourGym(gym.Env):
         self.spec = None
         self.metadata = None
 
-    def reset(self):
+    def reset(self, random_start=False):
         self.game.reset()
+        if random_start:
+            for _ in range(2):
+                action = random.choice(self.game.state.get_valid_moves())
+                self.step(action)
         return self.game.state
 
     def step(self, action):

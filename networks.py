@@ -26,7 +26,7 @@ class ValueNetwork(nn.Module):
             self.activation,
         )
         self.fc_1 = nn.Linear(12*d, 1)
-        self.optimizer = optim.Adam(self.parameters())
+        self.optimizer = optim.Adam(self.parameters(), 0.001)
         self.to(device)
 
     def forward(self, obs):
@@ -36,7 +36,7 @@ class ValueNetwork(nn.Module):
         # convert shape to (B, C, H, W)
         embed = self.convolutions(obs.reshape(-1, *img_shape))
         embed = torch.reshape(embed, (*batch_shape, -1))
-        value = self.fc_1(embed)
+        value = torch.tanh(self.fc_1(embed))
         return value
 
     def save_checkpoint(self, path):

@@ -85,7 +85,7 @@ if __name__ == "__main__":
     target_v_net.load_state_dict(v_net.state_dict())
     config = ConnectFourConfig(
         train_steps=int(3e5),
-        save_every=500,
+        log_interval=500,
         load_weights=False,
         target_update=100,
         search_depth=2,

@@ -18,9 +18,10 @@ def train(env, buffer, v_net, target_v_net, config, debug=False):
     if config.load_weights:
         print("Loading weights from file")
         v_net.load_checkpoint(config.save_path)
+        target_v_net.load_state_dict(v_net.state_dict()) 
 
     num_episodes = 0
-    state, done = env.reset(), False
+    state, done = env.reset(random_start=True), False
     for step in range(1, config.train_steps):
         obs = [state.b] # add channel dimension for v_net
         turn = 1 if state.turn == 1 else -1
@@ -40,7 +41,7 @@ def train(env, buffer, v_net, target_v_net, config, debug=False):
             loss = update_weights(buffer, v_net, target_v_net, config)
             update_target(config.tau, v_net, target_v_net)
             num_episodes += 1
-            state, done = env.reset(), False
+            state, done = env.reset(random_start=True), False
             buffer.clear()
 
             print(f"Episode {num_episodes} complete. Value loss: {loss:.3f}")
@@ -85,7 +86,7 @@ def update_weights(buffer, v_net, target_v_net, config):
 
     return value_loss
 
-def benchmark_agent(target_v_net, num_episodes=25, seed_steps=4):
+def benchmark_agent(target_v_net, num_episodes=50, seed_steps=4):
     """
     Benchmarks trained agent (p1) against fixed agent (p2) for num_episodes
 
@@ -94,7 +95,7 @@ def benchmark_agent(target_v_net, num_episodes=25, seed_steps=4):
     p1_wins, p2_wins = 0, 0
     for ep in range(num_episodes):
         state, done = env.reset(), False
-        for i in range(seed_steps):
+        for _ in range(seed_steps):
             action = random.choice(state.get_valid_moves())
             next_state, reward, done, _ = env.step(action)
             state = next_state
@@ -120,11 +121,10 @@ if __name__ == "__main__":
     buffer = ReplayBuffer()
     v_net = ValueNetwork(env.observation_space.shape)
     target_v_net = ValueNetwork(env.observation_space.shape)
-    target_v_net.load_state_dict(v_net.state_dict())
     config = ConnectFourConfig(
-        train_steps=int(3e5),
+        train_steps=int(1e6),
         log_interval=100,
-        load_weights=False,
+        load_weights=True,
         target_update=100,
         search_depth=2,
         discount_factor = 0.99,
