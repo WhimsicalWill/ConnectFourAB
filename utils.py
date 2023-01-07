@@ -157,6 +157,9 @@ class ConnectFourGame:
     def status(self):
         return self.state.get_game_over_status()
 
+    def get_num_moves(self):
+        return self.num_moves
+
     def get_random_move(self):
         return random.choice(self.state.get_valid_moves())
 

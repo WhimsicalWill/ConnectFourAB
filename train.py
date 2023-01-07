@@ -35,7 +35,7 @@ def train(env, buffer, v_net, target_v_net, config, debug=False):
         if done:
             if num_episodes % config.log_interval == 0:
                 v_net.save_checkpoint(config.save_path)
-                win_rate = benchmark_agent(target_v_net)
+                win_rate = benchmark_agent(env, target_v_net)
                 wandb.log({"win_rate": win_rate}, num_episodes)
             
             loss = update_weights(buffer, v_net, target_v_net, config)
@@ -86,7 +86,7 @@ def update_weights(buffer, v_net, target_v_net, config):
 
     return value_loss
 
-def benchmark_agent(target_v_net, num_episodes=50, seed_steps=4):
+def benchmark_agent(env, target_v_net, num_episodes=50):
     """
     Benchmarks trained agent (p1) against fixed agent (p2) for num_episodes
 
@@ -94,11 +94,7 @@ def benchmark_agent(target_v_net, num_episodes=50, seed_steps=4):
     """
     p1_wins, p2_wins = 0, 0
     for ep in range(num_episodes):
-        state, done = env.reset(), False
-        for _ in range(seed_steps):
-            action = random.choice(state.get_valid_moves())
-            next_state, reward, done, _ = env.step(action)
-            state = next_state
+        state, done = env.reset(random_start=True), False
         while not done:
             if state.turn == 1:
                 _, action = minimax_move(state, config.search_depth, target_v_net)
@@ -108,7 +104,7 @@ def benchmark_agent(target_v_net, num_episodes=50, seed_steps=4):
             state = next_state
         if reward == -1:
             p2_wins += 1
-        else:
+        elif reward == 1:
             p1_wins += 1
     ties = num_episodes - (p1_wins + p2_wins)
     print(f"Results (trained wins, fixed wins, ties): {p1_wins, p2_wins, ties}")
