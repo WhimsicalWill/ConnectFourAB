@@ -73,4 +73,4 @@ def threeOutOfFour(board):
                 three_window = window[:i] + window[i + 1:]
                 if window[i] == 0 and three_window[0] != 0 and all_same(three_window):
                     count += 1 if three_window[0] == 1 else -1
-    return count
+    return count / 1000
