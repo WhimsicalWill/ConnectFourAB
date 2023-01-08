@@ -9,16 +9,20 @@ from networks import ValueNetwork, device
 from buffer import ReplayBuffer
 from connectfour import minimax_move
 
-def train(env, buffer, v_net, target_v_net, config, debug=False):
+def train(env, buffer, config, debug=False):
     """
     Trains a value function through many episodes of self play
 
     Note: MAX plays on state.turn == 1 and MIN plays on state.turn == 2
     """
+    v_net = ValueNetwork(env.observation_space.shape)
+    target_v_net = ValueNetwork(env.observation_space.shape)
+    baseline_net = ValueNetwork(env.observation_space.shape)
     if config.load_weights:
         print("Loading weights from file")
         v_net.load_checkpoint(config.save_path)
-        target_v_net.load_state_dict(v_net.state_dict()) 
+        target_v_net.load_checkpoint(config.save_path) 
+        baseline_net.load_checkpoint(config.save_path)
 
     num_episodes = 0
     state, done = env.reset(random_start=True), False
@@ -35,8 +39,10 @@ def train(env, buffer, v_net, target_v_net, config, debug=False):
         if done:
             if num_episodes % config.log_interval == 0:
                 v_net.save_checkpoint(config.save_path)
-                win_rate = benchmark_agent(env, target_v_net)
-                wandb.log({"win_rate": win_rate}, num_episodes)
+                win_rate_fixed = benchmark_agent(env, (v_net, target_v_net))
+                win_rate_baseline = benchmark_agent(env,(v_net, baseline_net))
+                log_dict = {"win_rate_fixed": win_rate_fixed, "win_rate_baseline": win_rate_baseline}
+                wandb.log(log_dict, num_episodes)
             
             loss = update_weights(buffer, v_net, target_v_net, config)
             update_target(config.tau, v_net, target_v_net)
@@ -86,20 +92,21 @@ def update_weights(buffer, v_net, target_v_net, config):
 
     return value_loss
 
-def benchmark_agent(env, target_v_net, num_episodes=50):
+def benchmark_agent(env, v_funcs=(None, None), num_episodes=25):
     """
     Benchmarks trained agent (p1) against fixed agent (p2) for num_episodes
 
     p1 uses a learned value function, p2 uses a fixed value function
     """
+    p1_value_func, p2_value_func = v_funcs
     p1_wins, p2_wins = 0, 0
     for ep in range(num_episodes):
         state, done = env.reset(random_start=True), False
         while not done:
             if state.turn == 1:
-                _, action = minimax_move(state, config.search_depth, target_v_net)
+                _, action = minimax_move(state, config.search_depth, p1_value_func)
             else:
-                _, action = minimax_move(state, config.search_depth)
+                _, action = minimax_move(state, config.search_depth, p2_value_func)
             next_state, reward, done, _ = env.step(action)
             state = next_state
         if reward == -1:
@@ -107,7 +114,7 @@ def benchmark_agent(env, target_v_net, num_episodes=50):
         elif reward == 1:
             p1_wins += 1
     ties = num_episodes - (p1_wins + p2_wins)
-    print(f"Results (trained wins, fixed wins, ties): {p1_wins, p2_wins, ties}")
+    print(f"Results (p1 wins, p2 wins, ties): {p1_wins, p2_wins, ties}")
     return p1_wins / num_episodes
 
 
@@ -115,8 +122,6 @@ if __name__ == "__main__":
     wandb.login()
     env = ConnectFourGym(6, 7)
     buffer = ReplayBuffer()
-    v_net = ValueNetwork(env.observation_space.shape)
-    target_v_net = ValueNetwork(env.observation_space.shape)
     config = ConnectFourConfig(
         train_steps=int(1e6),
         log_interval=100,
@@ -129,4 +134,4 @@ if __name__ == "__main__":
     )
     print(f"Initialized modules, beginning training")
     with wandb.init(project='Connect Four with learned value function', config=config.__dict__):
-        train(env, buffer, v_net, target_v_net, config, debug=False)
+        train(env, buffer, config, debug=False)
